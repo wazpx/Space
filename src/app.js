@@ -9,32 +9,28 @@ const __dirname = path.resolve();
 // Parse form data
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// ✅ Serve the password page
+// ✅ Serve the password page (always force go to /password)
 app.get('/password', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'password.html'));
 });
 
-// ✅ Handle password submission
-app.post('/check-password', (req, res) => {
+// ✅ Handle password submission directly (no /check-password)
+app.post('/', (req, res) => {
   const { password } = req.body;
 
   if (password === 'dimitri') {
-    res.redirect('https://wazpx.vercel.app/&');
+    res.redirect('https://wazpx.vercel.app/&'); // Correct password
   } else {
-    res.redirect('https://classroom.google.com/?pli=1');
+    res.redirect('https://classroom.google.com/?pli=1'); // Incorrect password
   }
 });
 
-// ✅ Catch-all GET requests: force redirect to /password
+// ✅ Catch-all: Force redirect everything else to /password
 app.get('*', (req, res) => {
-  if (req.path !== '/password') {
-    res.redirect('/password');
-  } else {
-    res.sendFile(path.join(__dirname, 'public', 'password.html'));
-  }
+  res.redirect('/password');
 });
 
-// Start server
+// Start the server
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
