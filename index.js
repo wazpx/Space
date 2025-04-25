@@ -13,6 +13,11 @@ import routes from './src/routes.js';
 
 const server = http.createServer();
 const app = express();
+
+if (process.env.NODE_ENV === 'production') {
+	app.set('trust proxy', true);
+}
+
 const __dirname = process.cwd();
 const PORT = process.env.PORT || 6060;
 
