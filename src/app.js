@@ -10,85 +10,56 @@ const __dirname = path.resolve();
 // Middleware to parse incoming request bodies (e.g., from forms)
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Middleware to manage sessions
+// Middleware to manage sessions (for authentication)
 app.use(session({
-  secret: 'super-secret-key', // Change this to something more secure
+  secret: 'super-secret-key', // You should change this to a secure secret key
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false } // Set to true if you're using https
+  cookie: { secure: false } // Set this to true if you're using https
 }));
 
-// 🔒 Middleware to protect all routes and ask for the password immediately
+// 🔒 Middleware to protect all routes and force redirect to /password if not authenticated
 app.use((req, res, next) => {
+  // If the user is authenticated, allow access to the page
   if (req.session.authenticated) {
-    return next(); // If authenticated, allow access to the route
+    return next(); // Allow the request to continue to the requested page
   }
 
-  // If not authenticated, show the password prompt directly
-  const passwordPageHTML = `
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <title>Password Protected</title>
-        <style>
-          /* Same styling from your previous request */
-        </style>
-      </head>
-      <body>
-        <form action="/check-password" method="POST">
-          <div class="password-container">
-            <h2>Enter Password</h2>
-            <input type="password" name="password" class="password-input" placeholder="Password" autofocus required />
-            <br>
-            <button class="submit-btn" type="submit">Submit</button>
-          </div>
-        </form>
-      </body>
-    </html>
-  `;
-  res.send(passwordPageHTML); // Send the password page directly
+  // If not authenticated, force redirect to /password
+  res.redirect('/password');
 });
 
-// Handle password submission
+// Serve the password page at /password
+app.get('/password', (req, res) => {
+  // Serve the password.html file when visiting /password
+  res.sendFile(path.join(__dirname, 'public', 'password.html')); // Make sure password.html is in the public folder
+});
+
+// Handle the password form submission
 app.post('/check-password', (req, res) => {
-  const { password } = req.body;
-  const originalUrl = req.session.originalUrl || '/'; // Store the original URL the user wanted
+  const { password } = req.body; // Get the entered password
 
+  // Check if the entered password is correct
   if (password === 'dimitri') {
-    req.session.authenticated = true; // Set the session to authenticated
-    return res.redirect(originalUrl); // Redirect to the originally requested page
+    req.session.authenticated = true; // Mark the session as authenticated
+    return res.redirect('/'); // Redirect to the main page after successful authentication
   } else {
-    return res.redirect('https://classroom.google.com/?pli=1'); // Redirect if password is incorrect
+    // Redirect to Google Classroom if the password is incorrect
+    return res.redirect('https://classroom.google.com/?pli=1');
   }
 });
 
-// Handle all routes and protect them
-app.use((req, res, next) => {
-  // Save the requested URL so we can redirect the user after login
-  req.session.originalUrl = req.originalUrl;
-
-  // If the user is not authenticated, they will be forced to the password page
-  if (!req.session.authenticated) {
-    return next(); // Force the password page if not authenticated
-  }
-
-  // Otherwise, serve static files
-  return res.sendFile(path.join(__dirname, 'public', 'json', 'index.html'));
-});
-
-// Serve static files (or any other necessary files)
+// Serve static files (public assets, content, etc.)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Optional: Logout route
+// Optional: Create a logout route to destroy the session
 app.get('/logout', (req, res) => {
   req.session.destroy(() => {
-    res.redirect('/'); // Redirect to login page after logout
+    res.redirect('/password'); // Redirect to the password page after logout
   });
 });
 
-// Start the server
+// Start the server and listen on the specified port
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });
