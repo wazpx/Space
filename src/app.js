@@ -7,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const __dirname = path.resolve();
 
-// Middleware to parse incoming request bodies (e.g. from forms)
+// Middleware to parse incoming request bodies (e.g., from forms)
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Middleware to manage sessions
@@ -18,39 +18,73 @@ app.use(session({
   cookie: { secure: false } // Set to true if you're using https
 }));
 
-// 🔒 Middleware to protect everything except password and check-password routes
+// 🔒 Middleware to protect all routes and ask for the password immediately
 app.use((req, res, next) => {
-  // If the user is authenticated, or if they're accessing /password or /check-password, let them through
-  if (req.session.authenticated || req.path === '/password' || req.path === '/check-password') {
-    return next(); // Proceed to the next middleware or route handler
+  if (req.session.authenticated) {
+    return next(); // If authenticated, allow access to the route
   }
-  // If not authenticated, redirect to /password
-  res.redirect('/password');
+
+  // If not authenticated, show the password prompt directly
+  const passwordPageHTML = `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Password Protected</title>
+        <style>
+          /* Same styling from your previous request */
+        </style>
+      </head>
+      <body>
+        <form action="/check-password" method="POST">
+          <div class="password-container">
+            <h2>Enter Password</h2>
+            <input type="password" name="password" class="password-input" placeholder="Password" autofocus required />
+            <br>
+            <button class="submit-btn" type="submit">Submit</button>
+          </div>
+        </form>
+      </body>
+    </html>
+  `;
+  res.send(passwordPageHTML); // Send the password page directly
 });
 
-// Serve static files
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Show the password page (login form)
-app.get('/password', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'json', 'password.html'));
-});
-
-// Handle password submission (checking the password)
+// Handle password submission
 app.post('/check-password', (req, res) => {
   const { password } = req.body;
+  const originalUrl = req.session.originalUrl || '/'; // Store the original URL the user wanted
+
   if (password === 'dimitri') {
-    req.session.authenticated = true; // Set session variable to indicate the user is logged in
-    return res.redirect('/'); // Redirect to the main page
+    req.session.authenticated = true; // Set the session to authenticated
+    return res.redirect(originalUrl); // Redirect to the originally requested page
   } else {
     return res.redirect('https://classroom.google.com/?pli=1'); // Redirect if password is incorrect
   }
 });
 
+// Handle all routes and protect them
+app.use((req, res, next) => {
+  // Save the requested URL so we can redirect the user after login
+  req.session.originalUrl = req.originalUrl;
+
+  // If the user is not authenticated, they will be forced to the password page
+  if (!req.session.authenticated) {
+    return next(); // Force the password page if not authenticated
+  }
+
+  // Otherwise, serve static files
+  return res.sendFile(path.join(__dirname, 'public', 'json', 'index.html'));
+});
+
+// Serve static files (or any other necessary files)
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Optional: Logout route
 app.get('/logout', (req, res) => {
   req.session.destroy(() => {
-    res.redirect('/password'); // Redirect to login page after logout
+    res.redirect('/'); // Redirect to login page after logout
   });
 });
 
