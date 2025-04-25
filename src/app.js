@@ -15,7 +15,7 @@ app.get('/password', (req, res) => {
 });
 
 // ✅ Handle password submission
-app.post('/', (req, res) => {
+app.post('/check-password', (req, res) => {
   const { password } = req.body;
 
   if (password === 'dimitri') {
@@ -25,12 +25,16 @@ app.post('/', (req, res) => {
   }
 });
 
-// ✅ Redirect EVERYTHING ELSE to /password
-app.use((req, res) => {
-  res.redirect('/password');
+// ✅ Catch-all GET requests: force redirect to /password
+app.get('*', (req, res) => {
+  if (req.path !== '/password') {
+    res.redirect('/password');
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'password.html'));
+  }
 });
 
-// ✅ Start the server
+// Start server
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
