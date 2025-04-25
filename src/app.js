@@ -9,32 +9,32 @@ const __dirname = path.resolve();
 // Middleware to parse form data
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// ✅ Serve the password page (force go to /password on initial visit)
-app.get(['/','/g','/a'], (req, res) => {
-  res.redirect('/password'); // Redirect these paths to the password page
+// ✅ Force redirect to /password if visiting any of these routes
+app.get(['/', '/g', '/a'], (req, res) => {
+  res.redirect('/password'); // Always redirect to the /password page
 });
 
-// ✅ Serve the password page
+// ✅ Serve the password page (this will show the password form)
 app.get('/password', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'password.html'));
 });
 
-// ✅ Handle password submission directly (no /check-password)
+// ✅ Handle password submission directly on the same route
 app.post('/', (req, res) => {
   const { password } = req.body;
 
   if (password === 'dimitri') {
-    // Redirect to the correct URL if password is correct
+    // If the password is correct, redirect to the main site
     res.redirect('https://wazpx.vercel.app/&');
   } else {
-    // Redirect to Google Classroom if password is incorrect
+    // If the password is incorrect, redirect to Google Classroom
     res.redirect('https://classroom.google.com/?pli=1');
   }
 });
 
 // ✅ Catch-all: Force redirect everything else to /password (i.e., initial visit will always go to password page)
 app.get('*', (req, res) => {
-  res.redirect('/password');
+  res.redirect('/password'); // Any other routes should be redirected to /password
 });
 
 // Start the server
