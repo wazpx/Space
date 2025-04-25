@@ -20,7 +20,7 @@ app.get('/password', (req, res) => {
 });
 
 // ✅ Handle password submission directly on the same route
-app.post('/', (req, res) => {
+app.post('/password', (req, res) => {
   const { password } = req.body;
 
   if (password === 'dimitri') {
